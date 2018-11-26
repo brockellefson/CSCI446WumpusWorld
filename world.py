@@ -2,8 +2,8 @@ import random
 
 class Maze:
     def __init__(self, size):
-        self.maze = [[Node() for j in range(size)] for i in range(size)]
-        self.generate_maze()
+        self.maze = [[Node(i, j) for j in range(size)] for i in range(size)]
+        self.wumpus_alive = True
 
     def generate_maze(self): #generate and set nodes
         for i, row in enumerate(self.maze):
@@ -18,7 +18,11 @@ class Maze:
                 if i+1 <= len(self.maze)-1:
                     element.neighbors.append(self.maze[i+1][j])
 
-                #detemine if pit with 20% prob
+
+
+    def generate_hazards(self):
+        for row in self.maze:
+            for element in row:
                 if self.pit():
                     element.value = 'P'
                     element.pit = True
@@ -64,16 +68,21 @@ class Maze:
 
 
 class Node:
-    def __init__(self):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
         self.value = '_'
+        self.visited = False
         self.neighbors = []
 
-        self.pit = False
-        self.wumpus = False
-        self.gold = False
+        self.pit = None
+        self.wumpus = None
+        self.gold = None
+        self.valid = None
 
-        self.stench = False
-        self.breeze = False
+        self.stench = None
+        self.breeze = None
 
     def set_stench(self): #set neighbor nodes to have a stench
         for neighbor in self.neighbors:
