@@ -6,30 +6,29 @@ class Maze:
         self.generate_maze()
 
     def generate_maze(self): #generate and set nodes
-    for i, row in enumerate(self.maze):
-        for j, element in enumerate(row):
-            #set neighbors
-            if j+1 <= len(row)-1:
-                element.neighbors.append(self.maze[i][j+1])
-            if j-1 >= 0:
-                element.neighbors.append(self.maze[i][j-1])
-            if i-1 >= 0:
-                element.neighbors.append(self.maze[i-1][j])
-            if i+1 <= len(maze)-1:
-                element.neighbors.append(self.maze[i+1][j])
+        for i, row in enumerate(self.maze):
+            for j, element in enumerate(row):
+                #set neighbors
+                if j+1 <= len(row)-1:
+                    element.neighbors.append(self.maze[i][j+1])
+                if j-1 >= 0:
+                    element.neighbors.append(self.maze[i][j-1])
+                if i-1 >= 0:
+                    element.neighbors.append(self.maze[i-1][j])
+                if i+1 <= len(self.maze)-1:
+                    element.neighbors.append(self.maze[i+1][j])
 
-            #detemine if pit with 20% prob
-            if element
-            if self.pit():
-                node.value = 'P'
-                node.pit = True
-                node.set_breeze()
+                #detemine if pit with 20% prob
+                if self.pit():
+                    element.value = 'P'
+                    element.pit = True
+                    element.set_breeze()
 
-    self.wumpus()
-    self.gold()
+        self.wumpus()
+        self.gold()
 
     def pit(self): #determines if node is pit
-        if random.random < .2:
+        if random.random() < .2:
             return True
         return False
 
@@ -49,13 +48,24 @@ class Maze:
         if self.maze[x][y].pit or x is 0 and y is 0: #if node is pit or start, try again
             self.gold()
         else:
-            self.maze[x][y].value = 'G'
+            if self.maze[x][y].value is 'W':
+                self.maze[x][y].value = '*' #this node is both wumpus and gold
+            else:
+                self.maze[x][y].value = 'G'
             self.maze[x][y].gold = True
+
+
+    def print_maze(self):
+        for row in self.maze:
+            for element in row:
+                print(element.value, end='')
+            print('')
+        print()
 
 
 class Node:
     def __init__(self):
-        self.value = ''
+        self.value = '_'
         self.neighbors = []
 
         self.pit = False
