@@ -18,7 +18,15 @@ class Maze:
                 if i+1 <= len(self.maze)-1:
                     element.neighbors.append(self.maze[i+1][j])
 
-
+    def generate_map(self):
+        for row in self.maze:
+            for element in row:
+                element.pit = None
+                element.wumpus = None
+                element.gold = None
+                element.valid = None
+                element.stench = None
+                element.breeze = None                    
 
     def generate_hazards(self):
         for row in self.maze:
@@ -73,16 +81,15 @@ class Node:
         self.y = y
 
         self.value = '_'
-        self.visited = False
         self.neighbors = []
 
-        self.pit = None
-        self.wumpus = None
-        self.gold = None
+        self.pit = False
+        self.wumpus = False
+        self.gold = False
         self.valid = None
 
-        self.stench = None
-        self.breeze = None
+        self.stench = False
+        self.breeze = False
 
     def set_stench(self): #set neighbor nodes to have a stench
         for neighbor in self.neighbors:

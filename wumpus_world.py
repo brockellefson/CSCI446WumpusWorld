@@ -13,48 +13,82 @@ class WumpusWorld:
         self.curr_node = self.maze[0][0] #always start at 0,0
         self.map = world.Maze(size) #create maze of the same size to store logic of where to move
         self.map.generate_maze() #identify neighbors, set everything to '_'
+        self.map.generate_map() #set all agents to None
         self.map = self.map.maze
 
+        self.visited = []
         self.has_gold = False
         self.score = 0
 
     def game_over(self): #check to see if current node is at a lethal spot or won
         if self.curr_node.pit or self.curr_node.wumpus: #if node is a pit or at wumpus
             return True
-        elif self.curr_node.has_gold and self.curr_node is self.maze[0][0]: #if node is at the start and has the gold
+        elif self.has_gold and self.curr_node is self.maze[0][0]: #if node is at the start and has the gold
             return True
         return False
 
     def location(self): #return where curr_node is in maze in map form
         return self.map[self.curr_node.x][self.curr_node.y]
 
-    def eval_node(self): #evaluate node
-        if self.curr_node.breeze: #if node has a breeze
-            self.location.breeze = True
-            for neighbor in self.location.neighbor:
-                if not neighbor.visited and neighbor.pit is None: #if the neighbor has not been visited, possible pit
+    def evaluate_node(self, node, location, map, maze): #evaluate current node
+        self.visited.append(location)
+        location.value = 'K'
+
+        if node.gold: #if node is gold, take it
+            self.has_gold = True
+
+        if node.breeze: #if the node has a breeze, mark all other nodes as a possible pit
+            location.breeze = True
+            for neighbor in location.neighbors:
+                if neighbor not in self.visited and neighbor.pit is not False:
                     neighbor.value = '?'
         else:
-            self.location.breeze = False
+            location.breeze = False
+            for neighbor in location.neighbors:
+                neighbor.pit = False
 
-        if self.curr_node.stench: #if node has a stench
-            self.location.stench = True
-            for neighbor in self.location.neighbor:
-                if not neighbor.visited and neighbor.pit is None and self.world.wumpus_alive: #if the neighbor has not been visited, not a pit, and wumpus is alive
+        if node.stench:
+            location.stench = True
+            for neighbor in location.neighbors:
+                if neighbor not in self.visited and neighbor.wumpus is not False:
                     neighbor.value = '?'
         else:
-            self.location.stench = False
+            location.breeze = False
+            for neighbor in location.neighbors:
+                neighbor.wumpus = False
 
-    def eval_map(self): #evaluate map
-        for row in self.map:
+    def evaluate_world(self, map, maze):
+        for row in map:
             for node in row:
-                if node.value is '?': #if node is possibly a hazard, check it
-                    for neighbor in node.neighbors: #if a neighbor does not have a breeze or a stench, this node is legal
-                        if not neighbor.stench or not neighbor.breeze:
-                            node.value = 'K'
-                            node.valid = True
+                if node.value is '?':
+                    breeze_count = 0
+                    wumpus_count = 0
+                    for neighbor in node.neighbors
+                        if neighbor.pit is False and neighbor.wumpus is False:
+                            node.pit = False
+                            node.wumpus = False
+                            break
+                        if neighbor.breeze:
+                            breeze_count += 1
+                        if neighbor.stench:
+                            wumpus_count += 1
+
+                        if breeze_count >= 2:
+                            neighbor.pit = True
+                        if wumpus_count >= 2:
+                            neighbor.wumpus = True
 
 
+    def determine_move(self):
+        pass
+
+    def play(self):
+        while not self.game_over():
+            node = self.location()
+            self.evaluate_node(self.curr_node, self.location(), self.map, self.maze)
+            self.evaluate_world(self.map, self.maze)
+            self.curr_node = self.determine_move()
+        print('Game Over!\nScore: {}'.format(self.score))
 
 if __name__ == '__main__':
     game = WumpusWorld(int(sys.argv[1]))
