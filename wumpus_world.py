@@ -97,22 +97,32 @@ class WumpusWorld:
                 if node.breeze is True:
                     self.determine_pit(node)
 
-    def determine_move(self, location):
-        for neighbor in location.neighbors:
-            if neighbor.value is 'K':
-                print('sup')
-                return self.node_location(neighbor)
+    def determine_move(self, node, queue, visited):
+        while len(queue) > 0:
+            node = queue.pop()
+            if node in visited:
+                continue
+             visited_nodes.append(node)
+            if node.value == finish:
+                self.print_results("Depth First Search: ", node, moves)
+                return True
+            moves += 1
+            for neighbor in node.neighbors:
+                if neighbor not in visited_nodes and neighbor.value is not '%':
+                    neighbor.previous = node
+                    queue.append(neighbor)
+        return False
 
     def play(self):
         self.map[0][0].value = 'K'
-        queue = [self.location()]
-
+        queue = [self.curr_node]
+        visited = [self.curr_node]
 
         while not self.game_over():
             node = self.location()
             self.evaluate_node(self.curr_node, self.location(), self.map, self.maze)
             self.evaluate_world(self.map, self.maze)
-            self.curr_node = self.determine_move(node)
+            self.curr_node, queue, visited = self.determine_move(node, queue, visited)
             print('Determined Maze:')
             #self.world.print_maze()
             self.m.print_maze()
@@ -120,4 +130,4 @@ class WumpusWorld:
 
 if __name__ == '__main__':
     game = WumpusWorld(int(sys.argv[1]))
-    game.play()
+    #game.play()
