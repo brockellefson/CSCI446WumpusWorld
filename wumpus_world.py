@@ -11,10 +11,10 @@ class WumpusWorld:
         self.world.print_maze()
 
         self.curr_node = self.maze[0][0] #always start at 0,0
-        self.map = world.Maze(size) #create maze of the same size to store logic of where to move
-        self.map.generate_maze() #identify neighbors, set everything to '_'
-        self.map.generate_map() #set all agents to None
-        self.map = self.map.maze
+        self.m = world.Maze(size) #create maze of the same size to store logic of where to move
+        self.m.generate_maze() #identify neighbors, set everything to '_'
+        self.m.generate_map() #set all agents to None
+        self.map = self.m.maze
 
         self.visited = []
         self.has_gold = False
@@ -30,9 +30,11 @@ class WumpusWorld:
     def location(self): #return where curr_node is in maze in map form
         return self.map[self.curr_node.x][self.curr_node.y]
 
+    def node_location(self, node):
+        return self.maze[node.x][node.y]
+
     def evaluate_node(self, node, location, map, maze): #evaluate current node
         self.visited.append(location)
-        location.value = 'K'
 
         if node.gold: #if node is gold, take it
             self.has_gold = True
@@ -57,38 +59,65 @@ class WumpusWorld:
             for neighbor in location.neighbors:
                 neighbor.wumpus = False
 
+    def determine_pit(self, node):
+        valid_nodes = 0
+        invalid_node = ''
+        for neighbor in node.neighbors:
+            if neighbor.value is 'K':
+                valid_nodes += 1
+            if neighbor.value is '?':
+                invalid_node = neighbor
+
+        if valid_nodes == len(node.neighbors)-1:
+            invalid_node.pit = True
+            invalid_node.value = 'P'
+
     def evaluate_world(self, map, maze):
         for row in map:
             for node in row:
-                if node.value is '?':
-                    breeze_count = 0
+                if node.pit is False and node.wumpus is False:
+                    node.value = 'K'
+                elif node.value is '?':
                     wumpus_count = 0
-                    for neighbor in node.neighbors
-                        if neighbor.pit is False and neighbor.wumpus is False:
+                    for neighbor in node.neighbors:
+                        if neighbor.breeze is False and neighbor.stench is False:
                             node.pit = False
                             node.wumpus = False
+                            node.value = 'K'
                             break
-                        if neighbor.breeze:
-                            breeze_count += 1
+
                         if neighbor.stench:
                             wumpus_count += 1
 
-                        if breeze_count >= 2:
-                            neighbor.pit = True
                         if wumpus_count >= 2:
-                            neighbor.wumpus = True
+                            node.wumpus = True
+                            node.value = 'W'
 
+            for node in row:
+                if node.breeze is True:
+                    self.determine_pit(node)
 
-    def determine_move(self):
-        pass
+    def determine_move(self, location):
+        for neighbor in location.neighbors:
+            if neighbor.value is 'K':
+                print('sup')
+                return self.node_location(neighbor)
 
     def play(self):
+        self.map[0][0].value = 'K'
+        queue = [self.location()]
+
+
         while not self.game_over():
             node = self.location()
             self.evaluate_node(self.curr_node, self.location(), self.map, self.maze)
             self.evaluate_world(self.map, self.maze)
-            self.curr_node = self.determine_move()
+            self.curr_node = self.determine_move(node)
+            print('Determined Maze:')
+            #self.world.print_maze()
+            self.m.print_maze()
         print('Game Over!\nScore: {}'.format(self.score))
 
 if __name__ == '__main__':
     game = WumpusWorld(int(sys.argv[1]))
+    game.play()

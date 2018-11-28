@@ -26,15 +26,16 @@ class Maze:
                 element.gold = None
                 element.valid = None
                 element.stench = None
-                element.breeze = None                    
+                element.breeze = None
 
     def generate_hazards(self):
         for row in self.maze:
             for element in row:
-                if self.pit():
-                    element.value = 'P'
-                    element.pit = True
-                    element.set_breeze()
+                if element is not self.maze[0][0]:
+                    if self.pit():
+                        element.value = 'P'
+                        element.pit = True
+                        element.set_breeze()
 
         self.wumpus()
         self.gold()
