@@ -111,9 +111,11 @@ class WumpusWorld:
                         if neighbor.stench:
                             wumpus_count += 1
 
-                        if wumpus_count >= 2: #if a '?' has atleast 2 stench children, that node is the wumpus
-                            node.wumpus = True
-                            node.value = 'W'
+                    if wumpus_count >= 2: #if a '?' has atleast 2 stench children, that node is the wumpus
+                        node.wumpus = True
+                        node.value = 'W'
+                    else:
+                        node.wumpus = False
 
             for node in row:
                 if node.breeze is True: #determine any pits with updated information
