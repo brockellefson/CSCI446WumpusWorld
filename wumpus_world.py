@@ -1,5 +1,6 @@
 import world
 import sys
+from collections import deque
 
 class WumpusWorld:
     def __init__(self, size):
@@ -20,6 +21,27 @@ class WumpusWorld:
         self.has_gold = False
         self.score = 0
 
+    def bfs(self, curr_node, finish):
+       #create queue, visited_nodes needs to be reset
+       queue = deque([curr_node])
+       visited_nodes = []
+
+       while len(queue) > 0:
+          node = queue.pop()
+          if node in visited_nodes:
+             continue
+
+          visited_nodes.append(node)
+          if node is finish:
+              return self.node_location(neighbor)
+
+          for neighbor in node.neighbors:
+             if neighbor not in visited_nodes and neighbor.value is 'K':
+                neighbor.previous = node
+                queue.appendleft(neighbor)
+       return False
+
+
     def game_over(self): #check to see if current node is at a lethal spot or won
         if self.curr_node.pit or self.curr_node.wumpus: #if node is a pit or at wumpus
             return True
@@ -35,6 +57,7 @@ class WumpusWorld:
 
     def evaluate_node(self, node, location, map, maze): #evaluate current node
         self.visited.append(location)
+        location.value = 'K'
 
         if node.gold: #if node is gold, take it
             self.has_gold = True
@@ -97,37 +120,41 @@ class WumpusWorld:
                 if node.breeze is True:
                     self.determine_pit(node)
 
-    def determine_move(self, node, queue, visited):
-        while len(queue) > 0:
-            node = queue.pop()
-            if node in visited:
-                continue
-             visited_nodes.append(node)
-            if node.value == finish:
-                self.print_results("Depth First Search: ", node, moves)
-                return True
-            moves += 1
-            for neighbor in node.neighbors:
-                if neighbor not in visited_nodes and neighbor.value is not '%':
-                    neighbor.previous = node
-                    queue.append(neighbor)
-        return False
+    def determine_move(self, node, location, map, maze): #check neighbors for a 'K' node that has not been visited, if all have, bfs to 'K' unvisited global node, else pick random '?'
+        if self.has_gold:
+            return self.bfs(location, map[0][0])
+
+
+        for neighbor in location.neighbors: #check local neighbors for a unvisited 'K'
+            if neighbor.value is 'K' and neighbor not in self.visited:
+                return self.node_location(neighbor)
+
+        for row in map: #check globally for 'K' nodes that have not been visited
+            for element in row:
+                if element.value is 'K' and element not in self.visited:
+                    return self.bfs(location, element)
+
+        for neighbor in location.neighbors: #guess
+            if neighbor.value is '?':
+                return self.node_location(neighbor)
 
     def play(self):
         self.map[0][0].value = 'K'
-        queue = [self.curr_node]
-        visited = [self.curr_node]
 
         while not self.game_over():
             node = self.location()
-            self.evaluate_node(self.curr_node, self.location(), self.map, self.maze)
-            self.evaluate_world(self.map, self.maze)
-            self.curr_node, queue, visited = self.determine_move(node, queue, visited)
-            print('Determined Maze:')
-            #self.world.print_maze()
+            self.evaluate_node(self.curr_node, node, self.map, self.maze)
+
+            node.value = 'X'
+            print('Determined Maze: has_gold: {}'.format(self.has_gold))
+            print('Current Node: breeze: {} stench {}'.format(node.breeze, node.stench))
             self.m.print_maze()
+            node.value = 'K'
+
+            self.evaluate_world(self.map, self.maze)
+            self.curr_node = self.determine_move(self.curr_node, node, self.map, self.maze)
         print('Game Over!\nScore: {}'.format(self.score))
 
 if __name__ == '__main__':
     game = WumpusWorld(int(sys.argv[1]))
-    #game.play()
+    game.play()
