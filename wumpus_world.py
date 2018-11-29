@@ -21,7 +21,7 @@ class WumpusWorld:
         self.has_gold = False
         self.score = 0
 
-    def bfs(self, curr_node, finish):
+    def bfs(self, curr_node, finish): #bfs is used to go home with gold, or go to new undiscovered 'K' node
        #create queue, visited_nodes needs to be reset
        queue = deque([curr_node])
        visited_nodes = []
@@ -37,7 +37,6 @@ class WumpusWorld:
 
           for neighbor in node.neighbors:
              if neighbor not in visited_nodes and neighbor.value is 'K':
-                neighbor.previous = node
                 queue.appendleft(neighbor)
        return False
 
@@ -52,7 +51,7 @@ class WumpusWorld:
     def location(self): #return where curr_node is in maze in map form
         return self.map[self.curr_node.x][self.curr_node.y]
 
-    def node_location(self, node):
+    def node_location(self, node): #return where curr_node is in map in maze form
         return self.maze[node.x][node.y]
 
     def evaluate_node(self, node, location, map, maze): #evaluate current node
@@ -67,25 +66,25 @@ class WumpusWorld:
             for neighbor in location.neighbors:
                 if neighbor not in self.visited and neighbor.pit is not False:
                     neighbor.value = '?'
-        else:
+        else: #no breeze, mark all adjacent nodes as not a pit
             location.breeze = False
             for neighbor in location.neighbors:
                 neighbor.pit = False
 
-        if node.stench:
+        if node.stench: #if the node has a stench, mark all other nodes as a possible wumpus
             location.stench = True
             for neighbor in location.neighbors:
                 if neighbor not in self.visited and neighbor.wumpus is not False:
                     neighbor.value = '?'
-        else:
-            location.breeze = False
+        else: #no stench, mark all adjacent nodes as not wumpus
+            location.stench = False
             for neighbor in location.neighbors:
                 neighbor.wumpus = False
 
-    def determine_pit(self, node):
+    def determine_pit(self, node): #determine where pits are
         valid_nodes = 0
         invalid_node = ''
-        for neighbor in node.neighbors:
+        for neighbor in node.neighbors: #if all breeze children are 'K' except one, thats the pit
             if neighbor.value is 'K':
                 valid_nodes += 1
             if neighbor.value is '?':
@@ -95,15 +94,15 @@ class WumpusWorld:
             invalid_node.pit = True
             invalid_node.value = 'P'
 
-    def evaluate_world(self, map, maze):
+    def evaluate_world(self, map, maze): #evaluate current map to update nodes
         for row in map:
             for node in row:
-                if node.pit is False and node.wumpus is False:
+                if node.pit is False and node.wumpus is False: #if a node if not a pit and wumpus, automatic 'K'
                     node.value = 'K'
                 elif node.value is '?':
                     wumpus_count = 0
                     for neighbor in node.neighbors:
-                        if neighbor.breeze is False and neighbor.stench is False:
+                        if neighbor.breeze is False and neighbor.stench is False: #if a '?' node has a normal node, then that '?' cannot be a hazard
                             node.pit = False
                             node.wumpus = False
                             node.value = 'K'
@@ -112,18 +111,17 @@ class WumpusWorld:
                         if neighbor.stench:
                             wumpus_count += 1
 
-                        if wumpus_count >= 2:
+                        if wumpus_count >= 2: #if a '?' has atleast 2 stench children, that node is the wumpus
                             node.wumpus = True
                             node.value = 'W'
 
             for node in row:
-                if node.breeze is True:
+                if node.breeze is True: #determine any pits with updated information
                     self.determine_pit(node)
 
     def determine_move(self, node, location, map, maze): #check neighbors for a 'K' node that has not been visited, if all have, bfs to 'K' unvisited global node, else pick random '?'
-        if self.has_gold:
+        if self.has_gold: #have gold, go home
             return self.bfs(location, map[0][0])
-
 
         for neighbor in location.neighbors: #check local neighbors for a unvisited 'K'
             if neighbor.value is 'K' and neighbor not in self.visited:
@@ -145,9 +143,11 @@ class WumpusWorld:
             node = self.location()
             self.evaluate_node(self.curr_node, node, self.map, self.maze)
 
+            #printing current status of maze
             node.value = 'X'
             print('Determined Maze: has_gold: {}'.format(self.has_gold))
-            print('Current Node: breeze: {} stench {}'.format(node.breeze, node.stench))
+            print('Expected Conditions: breeze: {} stench {}'.format(node.breeze, node.stench))
+            print('Actual Conditions: breeze: {} stench {}'.format(self.curr_node.breeze, self.curr_node.stench))
             self.m.print_maze()
             node.value = 'K'
 
