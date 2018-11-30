@@ -87,7 +87,7 @@ class Node:
         self.pit = False
         self.wumpus = False
         self.gold = False
-        self.valid = None
+        self.previous = None
 
         self.stench = False
         self.breeze = False

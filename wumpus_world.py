@@ -23,6 +23,11 @@ class WumpusWorld:
         self.has_arrow = True
         self.score = 0
 
+    def update_multi_move(self, node, finish):
+        while node is not finish:
+            self.score -= 1
+            node = node.previous
+
     def bfs(self, curr_node, finish): #bfs is used to go home with gold, or go to new undiscovered 'K' node
        #create queue, visited_nodes needs to be reset
        queue = deque([curr_node])
@@ -35,10 +40,12 @@ class WumpusWorld:
 
           visited_nodes.append(node)
           if node is finish:
+              self.update_multi_move(node, curr_node)
               return self.node_location(node)
 
           for neighbor in node.neighbors:
              if neighbor not in visited_nodes and neighbor.value is 'K':
+                neighbor.previous = node
                 queue.appendleft(neighbor)
        return False
 
@@ -46,12 +53,15 @@ class WumpusWorld:
     def game_over(self): #check to see if current node is at a lethal spot or won
         if self.curr_node.pit: #if node is pit
             print('You fell in a pit!')
+            self.score -= 1000
             return True
         elif self.curr_node.wumpus: #if node is wumpus
             print('You ran into the Wumpus!')
+            self.score -= 1000
             return True
         elif self.has_gold and self.curr_node is self.maze[0][0]: #if node is at the start and has the gold
             print('You got out of the cave with the gold!')
+            self.score += 1000
             return True
         return False
 
@@ -143,6 +153,7 @@ class WumpusWorld:
 
         for neighbor in location.neighbors: #check local neighbors for a unvisited 'K'
             if neighbor.value is 'K' and neighbor not in self.visited:
+                self.score -= 1
                 return self.node_location(neighbor)
 
         for row in map: #check globally for 'K' nodes that have not been visited
@@ -150,6 +161,7 @@ class WumpusWorld:
                 if element.value is 'K' and element not in self.visited:
                     return self.bfs(location, element)
 
+        self.score -= 1
         return self.node_location(self.guess_node(location))
 
     def play(self):
