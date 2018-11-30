@@ -18,12 +18,12 @@ class WumpusWorld:
         self.m.generate_map() #set all agents to None
         self.map = self.m.maze
 
-        self.visited = []
-        self.has_gold = False
-        self.has_arrow = True
+        self.visited = [] #list of globally visited nodes
+        self.has_gold = False #does the player have gold?
+        self.has_arrow = True #does the player have an arrow?
         self.score = 0
 
-    def update_multi_move(self, node, finish):
+    def update_multi_move(self, node, finish): #after completing bfs, determine how many moves where made and update score
         while node is not finish:
             self.score -= 1
             node = node.previous
@@ -142,8 +142,8 @@ class WumpusWorld:
     def guess_node(self, node): #guess a random '?' neighbor
         guess = node.neighbors[random.randint(0, len(node.neighbors)-1)]
 
-        if guess.value is not '?':
-            guess = self.guess(node)
+        if guess.value is not '?': #if the guess is not a '?' node, do it again
+            guess = self.guess_node(node)
 
         return guess
 
@@ -161,10 +161,11 @@ class WumpusWorld:
                 if element.value is 'K' and element not in self.visited:
                     return self.bfs(location, element)
 
+        #else, guess
         self.score -= 1
         return self.node_location(self.guess_node(location))
 
-    def play(self):
+    def play(self): #play game
         self.map[0][0].value = 'K'
 
         while not self.game_over():
@@ -173,9 +174,8 @@ class WumpusWorld:
 
             #printing current status of maze
             node.value = 'X'
-            print('Determined Maze: has_gold: {}'.format(self.has_gold))
-            print('Expected Conditions: breeze: {} stench {}'.format(node.breeze, node.stench))
-            print('Actual Conditions: breeze: {} stench {}'.format(self.curr_node.breeze, self.curr_node.stench))
+            print('Determined Maze: \nhas_gold: {}'.format(self.has_gold))
+            print('Conditions: breeze: {} stench: {}'.format(node.breeze, node.stench))
             self.m.print_maze()
             node.value = 'K'
 
