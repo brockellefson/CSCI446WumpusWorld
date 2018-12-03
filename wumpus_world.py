@@ -81,7 +81,7 @@ class WumpusWorld:
         if node.breeze: #if the node has a breeze, mark all other nodes as a possible pit
             location.breeze = True
             for neighbor in location.neighbors:
-                if neighbor not in self.visited and neighbor.pit is not False:
+                if neighbor not in self.visited and neighbor.pit is not False and neighbor.wumpus is not True:
                     neighbor.value = '?'
         else: #no breeze, mark all adjacent nodes as not a pit
             location.breeze = False
@@ -91,7 +91,7 @@ class WumpusWorld:
         if node.stench: #if the node has a stench, mark all other nodes as a possible wumpus
             location.stench = True
             for neighbor in location.neighbors:
-                if neighbor not in self.visited and neighbor.wumpus is not False:
+                if neighbor not in self.visited and neighbor.wumpus is not False and neighbor.pit is not True:
                     neighbor.value = '?'
         else: #no stench, mark all adjacent nodes as not wumpus
             location.stench = False
@@ -112,6 +112,20 @@ class WumpusWorld:
                 invalid_node.pit = True
                 invalid_node.value = 'P'
 
+    def determine_wumpus(self, node): #determine where wumpus is
+        valid_nodes = 0
+        invalid_node = ''
+        for neighbor in node.neighbors: #if all breeze children are 'K' except one, thats the wumpus
+            if neighbor.value is 'K':
+                valid_nodes += 1
+            elif neighbor.value is '?':
+                invalid_node = neighbor
+
+        if valid_nodes == len(node.neighbors)-1:
+            if invalid_node is not '':
+                invalid_node.wumpus = True
+                invalid_node.value = 'W'
+
     def evaluate_world(self, map, maze): #evaluate current map to update nodes
         for row in map:
             for node in row:
@@ -129,7 +143,7 @@ class WumpusWorld:
                         if neighbor.stench:
                             wumpus_count += 1
 
-                    if wumpus_count >= 2: #if a '?' has atleast 2 stench children, that node is the wumpus
+                    if wumpus_count >= 3: #if a '?' has atleast 3 stench children, that node is the wumpus
                         node.wumpus = True
                         node.value = 'W'
                     else:
@@ -138,6 +152,8 @@ class WumpusWorld:
             for node in row:
                 if node.breeze is True: #determine any pits with updated information
                     self.determine_pit(node)
+                if node.stench is True:
+                    self.determine_wumpus(node)
 
     def guess_node(self, node): #guess a random '?' neighbor
         guess = node.neighbors[random.randint(0, len(node.neighbors)-1)]
@@ -146,6 +162,13 @@ class WumpusWorld:
             guess = self.guess_node(node)
 
         return guess
+
+    def no_moves(self, map):
+        for row in map:
+            for node in row:
+                if node.value is '?'
+                    return False
+        return True
 
     def determine_move(self, node, location, map, maze): #check neighbors for a 'K' node that has not been visited, if all have, bfs to 'K' unvisited global node, else pick random '?'
         if self.has_gold: #have gold, go home
@@ -160,6 +183,9 @@ class WumpusWorld:
             for element in row:
                 if element.value is 'K' and element not in self.visited:
                     return self.bfs(location, element)
+
+        if self.no_moves(map):
+
 
         #else, guess
         self.score -= 1
