@@ -81,7 +81,7 @@ class WumpusWorld:
         if node.breeze: #if the node has a breeze, mark all other nodes as a possible pit
             location.breeze = True
             for neighbor in location.neighbors:
-                if neighbor not in self.visited and neighbor.pit is not False and neighbor.wumpus is not True:
+                if neighbor not in self.visited and neighbor.pit is not False and neighbor.value is '_':
                     neighbor.value = '?'
         else: #no breeze, mark all adjacent nodes as not a pit
             location.breeze = False
@@ -91,7 +91,7 @@ class WumpusWorld:
         if node.stench: #if the node has a stench, mark all other nodes as a possible wumpus
             location.stench = True
             for neighbor in location.neighbors:
-                if neighbor not in self.visited and neighbor.wumpus is not False and neighbor.pit is not True:
+                if neighbor not in self.visited and neighbor.wumpus is not False and neighbor.value is '_':
                     neighbor.value = '?'
         else: #no stench, mark all adjacent nodes as not wumpus
             location.stench = False
@@ -116,7 +116,7 @@ class WumpusWorld:
         valid_nodes = 0
         invalid_node = ''
         for neighbor in node.neighbors: #if all breeze children are 'K' except one, thats the wumpus
-            if neighbor.value is 'K':
+            if neighbor.value is 'K' or neighbor.value is 'P':
                 valid_nodes += 1
             elif neighbor.value is '?':
                 invalid_node = neighbor
@@ -143,7 +143,7 @@ class WumpusWorld:
                         if neighbor.stench:
                             wumpus_count += 1
 
-                    if wumpus_count >= 3: #if a '?' has atleast 3 stench children, that node is the wumpus
+                    if wumpus_count is len(neighbor.neighbors): #if a '?' has atleast 3 stench children, that node is the wumpus
                         node.wumpus = True
                         node.value = 'W'
                     else:
@@ -166,11 +166,30 @@ class WumpusWorld:
     def no_moves(self, map):
         for row in map:
             for node in row:
-                if node.value is '?'
+                if node.value is '?':
                     return False
         return True
 
     def determine_move(self, node, location, map, maze): #check neighbors for a 'K' node that has not been visited, if all have, bfs to 'K' unvisited global node, else pick random '?'
+        if map[0][0] is location and node.stench:
+            self.has_arrow = False
+            self.score -= 10
+            print('Arrow Shot')
+            if self.node_location(map[0][1]).wumpus: #fire the arrow here
+                poss_wumpus = map[0][1]
+                print('You killed the wumpus by shooting the arrow!')
+                self.world.wumpus_alive = False
+                poss_wumpus.elim_stench();
+                poss_wumpus.wumpus = False
+                poss_wumpus.value = 'K'
+
+                self.node_location(poss_wumpus).elim_stench()
+                self.node_location(poss_wumpus).wumpus = False
+
+            if self.world.wumpus_alive: #if the wumpus is still alive, we know its this node
+                map[1][0].value = 'W'
+                map[1][0].wumpus = True
+
         if self.has_gold: #have gold, go home
             return self.bfs(location, map[0][0])
 
@@ -184,8 +203,31 @@ class WumpusWorld:
                 if element.value is 'K' and element not in self.visited:
                     return self.bfs(location, element)
 
-        if self.no_moves(map):
+        if self.no_moves(map) and self.has_arrow: #check no moves available and wumpus is discovered, then shoot arrow
+            for row in map:
+                for node in row:
+                    if node.value is 'W':
+                        if abs(location.x - node.x) <= abs(location.y - node.y):
+                            for wumpus_row in map:
+                                for in_line_node in wumpus_row:
+                                    if in_line_node.value is 'K' and in_line_node.x is node.x:
+                                        self.bfs(location, in_line_node)
 
+                        else:
+                            for wumpus_row in map:
+                                for in_line_node in wumpus_row:
+                                    if in_line_node.value is 'K' and in_line_node.y is node.y:
+                                        self.bfs(location, in_line_node)
+
+                        self.world.wumpus_alive = False
+                        node.elim_stench();
+                        node.wumpus = False
+                        self.node_location(node).elim_stench()
+                        self.node_location(node).wumpus = False
+                        print('You killed the wumpus by shooting the arrow!')
+                        self.has_arrow = False
+                        self.score -= 10
+                        return self.bfs(location, node)
 
         #else, guess
         self.score -= 1
@@ -203,6 +245,7 @@ class WumpusWorld:
             print('Determined Maze: \nhas_gold: {}'.format(self.has_gold))
             print('Conditions: breeze: {} stench: {}'.format(node.breeze, node.stench))
             self.m.print_maze()
+            self.world.print_maze()
             node.value = 'K'
 
             self.evaluate_world(self.map, self.maze)
